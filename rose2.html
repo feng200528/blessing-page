@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D玫瑰花</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // 场景
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+
+        camera.position.set(0, 2, 10);
+        camera.lookAt(0, 0, 0);
+
+        // 灯光
+        scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+        
+        const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.0);
+        dirLight1.position.set(5, 8, 5);
+        dirLight1.castShadow = true;
+        scene.add(dirLight1);
+
+        const dirLight2 = new THREE.DirectionalLight(0xff6666, 0.5);
+        dirLight2.position.set(-5, 3, -3);
+        scene.add(dirLight2);
+
+        const pointLight = new THREE.PointLight(0xff4444, 0.8, 20);
+        pointLight.position.set(3, 4, 3);
+        scene.add(pointLight);
+
+        // 玫瑰花组
+        const rose = new THREE.Group();
+
+        // 创建花瓣 - 使用参数化曲面
+        function createPetal(width, height, curl, twist) {
+            const geom = new THREE.BufferGeometry();
+            const segW = 20, segH = 30;
+            const vertices = [], uvs = [], indices = [];
+
+            for (let j = 0; j <= segH; j++) {
+                const v = j / segH;
+                for (let i = 0; i <= segW; i++) {
+                    const u = i / segW;
+
+                    // 花瓣轮廓
+                    const w = Math.sin(v * Math.PI) * width * (1 - Math.pow(v * 2 - 1, 4) * 0.4);
+                    const x = (u - 0.5) * w * 2;
+                    const y = v * height;
+
+                    // 弯曲
+                    const curlZ = -curl * Math.pow(v, 1.8);
+                    // 中间凹陷
+                    const dip = -Math.sin(u * Math.PI) * 0.1 * Math.pow(v, 2);
+                    // 边缘卷曲
+                    const edge = Math.pow(Math.abs(u - 0.5) * 2, 4) * curl * 0.4;
+
+                    const z = curlZ + dip + edge;
+
+                    // 扭转
+                    const twistAngle = twist * v;
+                    const rx = x * Math.cos(twistAngle) - z * Math.sin(twistAngle);
+                    const rz = x * Math.sin(twistAngle) + z * Math.cos(twistAngle);
+
+                    vertices.push(rx, y, rz);
+                    uvs.push(u, v);
+                }
+            }
+
+            for (let j = 0; j < segH; j++) {
+                for (let i = 0; i < segW; i++) {
+                    const a = j * (segW + 1) + i;
+                    const b = a + 1;
+                    const c = (j + 1) * (segW + 1) + i;
+                    const d = c + 1;
+                    indices.push(a, b, c, b, d, c);
+                }
+            }
+
+            geom.setIndex(indices);
+            geom.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            geom.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+            geom.computeVertexNormals();
+
+            return geom;
+        }
+
+        // 花瓣材质
+        function createPetalMaterial(lightness) {
+            return new THREE.MeshStandardMaterial({
+                color: new THREE.Color().setHSL(0, 0.9, lightness),
+                roughness: 0.55,
+                metalness: 0.02,
+                side: THREE.DoubleSide
+            });
+        }
+
+        // 创建玫瑰花
+        function buildRose() {
+            const layers = 12;
+            
+            for (let layer = 0; layer < layers; layer++) {
+                const t = layer / layers;
+                const petals = 3 + Math.floor(layer * 1.8);
+                const radius = 0.1 + layer * 0.22;
+                const width = 0.35 + layer * 0.1;
+                const height = 0.5 + layer * 0.12;
+                const curl = 0.25 + layer * 0.1;
+                const twist = layer * 0.03;
+                const tilt = 0.25 + layer * 0.06;
+                const yOffset = 1.0 - layer * 0.08;
+                const lightness = 0.2 + t * 0.2;
+
+                const mat = createPetalMaterial(lightness);
+
+                for (let i = 0; i < petals; i++) {
+                    const angle = (i / petals) * Math.PI * 2 + layer * 0.618 * Math.PI;
+                    const geom = createPetal(width, height, curl, twist);
+                    const petal = new THREE.Mesh(geom, mat);
+
+                    petal.position.set(
+                        Math.cos(angle) * radius,
+                        yOffset,
+                        Math.sin(angle) * radius
+                    );
+                    petal.rotation.y = -angle + Math.PI / 2;
+                    petal.rotation.x = -tilt;
+                    petal.rotation.z = (Math.random() - 0.5) * 0.04;
+
+                    petal.castShadow = true;
+                    petal.receiveShadow = true;
+
+                    rose.add(petal);
+                }
+            }
+
+            // 花心
+            const centerGeom = new THREE.SphereGeometry(0.2, 16, 16);
+            const centerMat = new THREE.MeshStandardMaterial({
+                color: 0x550000,
+                roughness: 0.8
+            });
+            const center = new THREE.Mesh(centerGeom, centerMat);
+            center.position.y = 1.1;
+            center.scale.y = 0.6;
+            rose.add(center);
+
+            // 花茎
+            const stemCurve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(0.04, -1.5, 0.02),
+                new THREE.Vector3(-0.02, -3, -0.01),
+                new THREE.Vector3(0.01, -4.5, 0.01),
+                new THREE.Vector3(0, -6, 0)
+            ]);
+            const stemGeom = new THREE.TubeGeometry(stemCurve, 50, 0.07, 10, false);
+            const stemMat = new THREE.MeshStandardMaterial({ color: 0x2d5a2d, roughness: 0.8 });
+            const stem = new THREE.Mesh(stemGeom, stemMat);
+            stem.castShadow = true;
+            rose.add(stem);
+
+            // 叶子
+            function addLeaf(x, y, z, size, rotZ) {
+                const shape = new THREE.Shape();
+                shape.moveTo(0, 0);
+                shape.bezierCurveTo(size * 0.3, size * 0.15, size * 0.6, size * 0.18, size, 0);
+                shape.bezierCurveTo(size * 0.6, -size * 0.18, size * 0.3, -size * 0.15, 0, 0);
+                const geom = new THREE.ShapeGeometry(shape, 12);
+                const mat = new THREE.MeshStandardMaterial({ color: 0x2d6a2d, roughness: 0.7, side: THREE.DoubleSide });
+                const leaf = new THREE.Mesh(geom, mat);
+                leaf.position.set(x, y, z);
+                leaf.rotation.z = rotZ;
+                leaf.castShadow = true;
+                rose.add(leaf);
+            }
+
+            addLeaf(-0.5, -2, 0.1, 0.7, -0.5);
+            addLeaf(0.55, -3.5, -0.15, 0.6, 0.5);
+        }
+
+        buildRose();
+        rose.position.y = 0.5;
+        scene.add(rose);
+
+        // 动画
+        function animate() {
+            requestAnimationFrame(animate);
+            rose.rotation.y += 0.005;
+            rose.position.y = 0.5 + Math.sin(Date.now() * 0.001) * 0.08;
+            
+            pointLight.position.x = Math.sin(Date.now() * 0.001) * 3;
+            pointLight.position.z = Math.cos(Date.now() * 0.001) * 3;
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>
