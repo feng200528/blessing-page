@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>玫瑰花 - 送给特别的你</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a0a0a 0%, #2d1b1b 50%, #1a0a0a 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .message {
+            position: fixed;
+            bottom: 50px;
+            text-align: center;
+            z-index: 10;
+            color: rgba(255, 200, 200, 0.9);
+            font-size: 24px;
+            text-shadow: 0 0 20px rgba(255, 100, 100, 0.5);
+            animation: fadeInUp 2s ease-out 3s both;
+            letter-spacing: 3px;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .title {
+            position: fixed;
+            top: 30px;
+            text-align: center;
+            z-index: 10;
+            color: rgba(255, 150, 150, 0.8);
+            font-size: 18px;
+            text-shadow: 0 0 15px rgba(255, 100, 100, 0.3);
+            animation: fadeIn 2s ease-out 1s both;
+            letter-spacing: 5px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* 飘落的花瓣 */
+        .petal {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(ellipse at center, #ff6b6b 0%, #ee5a5a 50%, #d44444 100%);
+            border-radius: 50% 0 50% 50%;
+            opacity: 0.7;
+            animation: petalFall linear infinite;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        @keyframes petalFall {
+            0% {
+                transform: translateY(-100px) rotate(0deg) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.7;
+            }
+            90% {
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(110vh) rotate(720deg) translateX(100px);
+                opacity: 0;
+            }
+        }
+
+        /* 光晕效果 */
+        .glow {
+            position: fixed;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 100, 100, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: glowPulse 4s ease-in-out infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+        }
+    </style>
+</head>
+<body>
+    <div class="glow" style="top: 20%; left: 30%;"></div>
+    <div class="glow" style="top: 50%; right: 20%; animation-delay: 2s;"></div>
+
+    <div class="title">送给特别的你</div>
+
+    <canvas id="roseCanvas"></canvas>
+
+    <div class="message">你是我心中最美的玫瑰 🌹</div>
+
+    <script>
+        const canvas = document.getElementById('roseCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 设置画布大小
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // 玫瑰花参数
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        let time = 0;
+
+        // 绘制玫瑰花花瓣
+        function drawPetal(x, y, size, angle, color, alpha) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            ctx.globalAlpha = alpha;
+
+            // 花瓣形状
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.bezierCurveTo(
+                size * 0.3, -size * 0.5,
+                size * 0.8, -size * 0.3,
+                size, 0
+            );
+            ctx.bezierCurveTo(
+                size * 0.8, size * 0.3,
+                size * 0.3, size * 0.5,
+                0, 0
+            );
+
+            const gradient = ctx.createRadialGradient(0, 0, 0, size * 0.5, 0, size);
+            gradient.addColorStop(0, color);
+            gradient.addColorStop(0.7, color);
+            gradient.addColorStop(1, 'rgba(100, 0, 0, 0.3)');
+
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // 花瓣边缘高光
+            ctx.strokeStyle = 'rgba(255, 200, 200, 0.3)';
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        // 绘制花茎
+        function drawStem() {
+            ctx.save();
+            ctx.strokeStyle = '#2d5a2d';
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+
+            // 主茎
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY + 50);
+            ctx.bezierCurveTo(
+                centerX - 5, centerY + 150,
+                centerX + 5, centerY + 250,
+                centerX, centerY + 350
+            );
+            ctx.stroke();
+
+            // 叶子
+            drawLeaf(centerX - 30, centerY + 180, -0.5, 40);
+            drawLeaf(centerX + 35, centerY + 240, 0.5, 35);
+
+            ctx.restore();
+        }
+
+        // 绘制叶子
+        function drawLeaf(x, y, angle, size) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.bezierCurveTo(
+                size * 0.3, -size * 0.4,
+                size * 0.7, -size * 0.3,
+                size, 0
+            );
+            ctx.bezierCurveTo(
+                size * 0.7, size * 0.3,
+                size * 0.3, size * 0.4,
+                0, 0
+            );
+
+            const gradient = ctx.createLinearGradient(0, 0, size, 0);
+            gradient.addColorStop(0, '#1a4a1a');
+            gradient.addColorStop(0.5, '#2d6a2d');
+            gradient.addColorStop(1, '#1a4a1a');
+
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // 叶脉
+            ctx.strokeStyle = 'rgba(100, 180, 100, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(size * 0.8, 0);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        // 绘制完整的玫瑰花
+        function drawRose() {
+            const layers = 8;
+            const petalsPerLayer = [5, 7, 9, 11, 13, 15, 17, 19];
+            const layerRadius = [15, 25, 38, 52, 68, 85, 105, 125];
+
+            // 从外层到内层绘制
+            for (let layer = layers - 1; layer >= 0; layer--) {
+                const numPetals = petalsPerLayer[layer];
+                const radius = layerRadius[layer];
+                const petalSize = 20 + layer * 5;
+                const alpha = 0.6 + (layer / layers) * 0.4;
+
+                // 颜色从外到内渐变
+                const hue = 0;
+                const saturation = 70 - layer * 3;
+                const lightness = 35 + layer * 3;
+                const color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+
+                for (let i = 0; i < numPetals; i++) {
+                    const angle = (i / numPetals) * Math.PI * 2 + time * 0.001 * (layer % 2 === 0 ? 1 : -1);
+                    const x = centerX + Math.cos(angle) * radius;
+                    const y = centerY + Math.sin(angle) * radius * 0.6; // 椭圆效果
+
+                    drawPetal(x, y, petalSize, angle + Math.PI / 2, color, alpha);
+                }
+            }
+
+            // 花心
+            ctx.save();
+            const heartGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 20);
+            heartGradient.addColorStop(0, '#8b0000');
+            heartGradient.addColorStop(0.5, '#a52a2a');
+            heartGradient.addColorStop(1, '#cd5c5c');
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 15, 0, Math.PI * 2);
+            ctx.fillStyle = heartGradient;
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // 创建飘落的花瓣
+        function createPetals() {
+            setInterval(() => {
+                const petal = document.createElement('div');
+                petal.className = 'petal';
+                petal.style.left = Math.random() * 100 + '%';
+                petal.style.animationDuration = (Math.random() * 5 + 8) + 's';
+                petal.style.animationDelay = Math.random() * 2 + 's';
+                const size = Math.random() * 15 + 10;
+                petal.style.width = size + 'px';
+                petal.style.height = size + 'px';
+                document.body.appendChild(petal);
+
+                setTimeout(() => petal.remove(), 15000);
+            }, 500);
+        }
+
+        // 动画循环
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawStem();
+            drawRose();
+
+            time++;
+            requestAnimationFrame(animate);
+        }
+
+        // 启动
+        animate();
+        createPetals();
+    </script>
+</body>
+</html>
