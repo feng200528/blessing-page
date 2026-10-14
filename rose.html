@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D玫瑰花 - 送给特别的你</title>
+    <title>玫瑰花 - 送给特别的你</title>
     <style>
         * {
             margin: 0;
@@ -69,12 +69,11 @@
             to { opacity: 1; }
         }
 
-        /* 光晕 */
         .glow {
             position: fixed;
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(255, 50, 50, 0.1) 0%, transparent 70%);
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(255, 50, 50, 0.15) 0%, transparent 70%);
             border-radius: 50%;
             animation: glowPulse 4s ease-in-out infinite;
             z-index: 0;
@@ -86,18 +85,17 @@
             50% { transform: scale(1.3); opacity: 0.8; }
         }
 
-        /* 飘落花瓣 */
         .petal {
             position: fixed;
-            width: 20px;
-            height: 20px;
-            background: radial-gradient(ellipse at center, #ff2222 0%, #cc0000 50%, #880000 100%);
+            width: 25px;
+            height: 25px;
+            background: radial-gradient(ellipse at 30% 30%, #ff3333 0%, #cc0000 40%, #880000 100%);
             border-radius: 50% 0 50% 50%;
-            opacity: 0.8;
+            opacity: 0.85;
             animation: petalFall linear infinite;
             z-index: 5;
             pointer-events: none;
-            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.6);
         }
 
         @keyframes petalFall {
@@ -107,24 +105,24 @@
             }
             10% {
                 opacity: 0.9;
-                transform: translateY(0) rotate(45deg) translateX(20px) scale(1);
+                transform: translateY(0) rotate(60deg) translateX(30px) scale(1);
             }
             50% {
-                transform: translateY(50vh) rotate(360deg) translateX(-30px) scale(1);
+                transform: translateY(50vh) rotate(400deg) translateX(-40px) scale(1.1);
             }
             90% {
-                opacity: 0.8;
-                transform: translateY(100vh) rotate(680deg) translateX(40px) scale(0.9);
+                opacity: 0.85;
+                transform: translateY(100vh) rotate(700deg) translateX(50px) scale(0.9);
             }
             100% {
-                transform: translateY(110vh) rotate(720deg) translateX(50px) scale(0.7);
+                transform: translateY(110vh) rotate(720deg) translateX(60px) scale(0.7);
                 opacity: 0;
             }
         }
     </style>
 </head>
 <body>
-    <div class="glow" style="top: 30%; left: 35%;"></div>
+    <div class="glow" style="top: 25%; left: 30%;"></div>
 
     <div class="title">送给特别的你</div>
 
@@ -144,101 +142,62 @@
         window.addEventListener('resize', resizeCanvas);
 
         const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        let rotation = 0;
+        const centerY = canvas.height / 2 - 50;
+        let time = 0;
 
-        // 3D点旋转
-        function rotateX(point, angle) {
-            const cos = Math.cos(angle);
-            const sin = Math.sin(angle);
-            return {
-                x: point.x,
-                y: point.y * cos - point.z * sin,
-                z: point.y * sin + point.z * cos
-            };
-        }
-
-        function rotateY(point, angle) {
-            const cos = Math.cos(angle);
-            const sin = Math.sin(angle);
-            return {
-                x: point.x * cos + point.z * sin,
-                y: point.y,
-                z: -point.x * sin + point.z * cos
-            };
-        }
-
-        // 投影到2D
-        function project(point) {
-            const fov = 500;
-            const scale = fov / (fov + point.z);
-            return {
-                x: centerX + point.x * scale,
-                y: centerY + point.y * scale,
-                scale: scale
-            };
-        }
-
-        // 生成玫瑰花点
-        function generateRosePoints() {
-            const points = [];
-            const layers = 20;
-
-            for (let layer = 0; layer < layers; layer++) {
-                const layerRadius = 20 + layer * 8;
-                const petalsInLayer = 8 + layer * 2;
-                const heightOffset = layer * 3 - 30;
-
-                for (let i = 0; i < petalsInLayer; i++) {
-                    const angle = (i / petalsInLayer) * Math.PI * 2;
-                    const petalLength = 30 + layer * 2;
-
-                    // 花瓣形状
-                    for (let t = 0; t <= 1; t += 0.1) {
-                        const r = layerRadius * (1 - t * 0.3);
-                        const x = Math.cos(angle) * r + Math.cos(angle + t * 2) * petalLength * t;
-                        const y = heightOffset - t * 20;
-                        const z = Math.sin(angle) * r + Math.sin(angle + t * 2) * petalLength * t;
-
-                        points.push({
-                            x: x,
-                            y: y,
-                            z: z,
-                            layer: layer,
-                            t: t
-                        });
-                    }
-                }
-            }
-
-            return points;
-        }
-
-        // 绘制花瓣
-        function drawPetal3D(x, y, size, layer, t) {
-            const alpha = 0.5 + t * 0.5;
-            const hue = 0;
-            const saturation = 100;
-            const lightness = 40 + layer * 1.5 + t * 15;
-
+        // 绘制单片花瓣 - 水滴形状
+        function drawPetal(cx, cy, size, angle, layer, curl) {
             ctx.save();
-            ctx.globalAlpha = alpha;
+            ctx.translate(cx, cy);
+            ctx.rotate(angle);
 
-            // 花瓣形状
+            // 花瓣路径 - 水滴形
             ctx.beginPath();
-            ctx.ellipse(x, y, size * 1.5, size, 0, 0, Math.PI * 2);
+            ctx.moveTo(0, 0);
 
-            const gradient = ctx.createRadialGradient(x, y, 0, x, y, size * 1.5);
-            gradient.addColorStop(0, `hsla(${hue}, ${saturation}%, ${lightness + 25}%, ${alpha})`);
-            gradient.addColorStop(0.5, `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`);
-            gradient.addColorStop(1, `hsla(${hue}, ${saturation - 10}%, ${lightness - 15}%, ${alpha * 0.6})`);
+            // 右侧曲线
+            ctx.bezierCurveTo(
+                size * 0.4, -size * 0.2,
+                size * 0.6, -size * 0.5,
+                size * 0.3, -size * 0.9
+            );
+
+            // 顶部
+            ctx.bezierCurveTo(
+                size * 0.1, -size * 1.0,
+                -size * 0.1, -size * 1.0,
+                -size * 0.3, -size * 0.9
+            );
+
+            // 左侧曲线
+            ctx.bezierCurveTo(
+                -size * 0.6, -size * 0.5,
+                -size * 0.4, -size * 0.2,
+                0, 0
+            );
+
+            // 渐变 - 红色系
+            const gradient = ctx.createRadialGradient(0, -size * 0.4, 0, 0, -size * 0.4, size);
+            const lightness = 45 + layer * 3;
+            gradient.addColorStop(0, `hsl(0, 100%, ${lightness + 15}%)`);
+            gradient.addColorStop(0.4, `hsl(0, 95%, ${lightness}%)`);
+            gradient.addColorStop(0.8, `hsl(355, 90%, ${lightness - 10}%)`);
+            gradient.addColorStop(1, `hsl(350, 85%, ${lightness - 20}%)`);
 
             ctx.fillStyle = gradient;
             ctx.fill();
 
             // 边缘高光
-            ctx.strokeStyle = `hsla(${hue}, ${saturation}%, ${lightness + 35}%, ${alpha * 0.7})`;
-            ctx.lineWidth = 0.8;
+            ctx.strokeStyle = `hsla(0, 100%, ${lightness + 25}%, 0.4)`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // 花瓣纹理
+            ctx.beginPath();
+            ctx.moveTo(0, -size * 0.1);
+            ctx.quadraticCurveTo(size * 0.05, -size * 0.5, 0, -size * 0.85);
+            ctx.strokeStyle = `hsla(0, 80%, ${lightness - 15}%, 0.3)`;
+            ctx.lineWidth = 0.5;
             ctx.stroke();
 
             ctx.restore();
@@ -247,27 +206,29 @@
         // 绘制花茎
         function drawStem() {
             ctx.save();
+
+            // 主茎
             ctx.strokeStyle = '#2d5a2d';
-            ctx.lineWidth = 6;
+            ctx.lineWidth = 8;
             ctx.lineCap = 'round';
 
             ctx.beginPath();
-            ctx.moveTo(centerX, centerY + 80);
+            ctx.moveTo(centerX, centerY + 120);
             ctx.bezierCurveTo(
-                centerX - 5, centerY + 180,
-                centerX + 5, centerY + 280,
-                centerX, centerY + 380
+                centerX - 3, centerY + 200,
+                centerX + 3, centerY + 300,
+                centerX, centerY + 400
             );
             ctx.stroke();
 
             // 叶子
-            drawLeaf3D(centerX - 40, centerY + 200, -0.4, 50);
-            drawLeaf3D(centerX + 45, centerY + 280, 0.4, 45);
+            drawLeaf(centerX - 50, centerY + 220, -0.5, 60);
+            drawLeaf(centerX + 55, centerY + 300, 0.5, 55);
 
             ctx.restore();
         }
 
-        function drawLeaf3D(x, y, angle, size) {
+        function drawLeaf(x, y, angle, size) {
             ctx.save();
             ctx.translate(x, y);
             ctx.rotate(angle);
@@ -293,55 +254,73 @@
             ctx.fillStyle = gradient;
             ctx.fill();
 
+            // 叶脉
+            ctx.strokeStyle = 'rgba(100, 180, 100, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(size * 0.8, 0);
+            ctx.stroke();
+
             ctx.restore();
         }
 
-        // 主绘制函数
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // 绘制完整玫瑰花
+        function drawRose() {
+            const layers = 6;
+            const petalsPerLayer = [3, 5, 7, 9, 11, 13];
+            const layerRadius = [15, 30, 50, 75, 100, 130];
+            const petalSizes = [25, 35, 45, 55, 65, 75];
 
-            // 绘制花茎
-            drawStem();
+            // 从外层到内层绘制
+            for (let layer = layers - 1; layer >= 0; layer--) {
+                const numPetals = petalsPerLayer[layer];
+                const radius = layerRadius[layer];
+                const petalSize = petalSizes[layer];
 
-            // 生成并绘制玫瑰花
-            const points = generateRosePoints();
+                for (let i = 0; i < numPetals; i++) {
+                    const angle = (i / numPetals) * Math.PI * 2 + layer * 0.3;
+                    const x = centerX + Math.cos(angle) * radius;
+                    const y = centerY + Math.sin(angle) * radius * 0.5;
 
-            // 按深度排序
-            const projectedPoints = points.map(p => {
-                let rotated = rotateY(p, rotation);
-                rotated = rotateX(rotated, 0.3);
-                const projected = project(rotated);
-                return {
-                    ...projected,
-                    layer: p.layer,
-                    t: p.t,
-                    z: rotated.z
-                };
-            });
+                    // 外层花瓣向下弯曲，内层向上
+                    const curl = (layer / layers) * 0.5;
+                    const petalAngle = angle + Math.PI / 2 + curl;
 
-            projectedPoints.sort((a, b) => b.z - a.z);
-
-            // 绘制花瓣
-            projectedPoints.forEach(p => {
-                const size = 8 * p.scale;
-                drawPetal3D(p.x, p.y, size, p.layer, p.t);
-            });
+                    drawPetal(x, y, petalSize, petalAngle, layer, curl);
+                }
+            }
 
             // 花心
             ctx.save();
-            const heartGradient = ctx.createRadialGradient(centerX, centerY - 30, 0, centerX, centerY - 30, 25);
-            heartGradient.addColorStop(0, '#ff0000');
+            const heartGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 20);
+            heartGradient.addColorStop(0, '#ff1111');
             heartGradient.addColorStop(0.5, '#cc0000');
             heartGradient.addColorStop(1, '#880000');
 
             ctx.beginPath();
-            ctx.arc(centerX, centerY - 30, 20, 0, Math.PI * 2);
+            ctx.arc(centerX, centerY, 18, 0, Math.PI * 2);
             ctx.fillStyle = heartGradient;
             ctx.fill();
-            ctx.restore();
 
-            rotation += 0.008;
-            requestAnimationFrame(draw);
+            // 花心高光
+            ctx.beginPath();
+            ctx.arc(centerX - 5, centerY - 5, 6, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 200, 200, 0.4)';
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // 主动画循环
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawStem();
+            drawRose();
+
+            time++;
+            requestAnimationFrame(animate);
         }
 
         // 创建飘落花瓣
@@ -351,17 +330,17 @@
                 petal.className = 'petal';
                 petal.style.left = Math.random() * 100 + '%';
                 petal.style.animationDuration = (Math.random() * 4 + 6) + 's';
-                const size = Math.random() * 15 + 15;
+                const size = Math.random() * 15 + 20;
                 petal.style.width = size + 'px';
                 petal.style.height = size + 'px';
                 document.body.appendChild(petal);
 
                 setTimeout(() => petal.remove(), 12000);
-            }, 400);
+            }, 350);
         }
 
         // 启动
-        draw();
+        animate();
         createPetals();
     </script>
 </body>
