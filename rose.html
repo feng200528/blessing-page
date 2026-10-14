@@ -5,28 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D玫瑰花 - 送给特别的你</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: radial-gradient(ellipse at center, #1a0505 0%, #0a0000 100%);
             min-height: 100vh;
             overflow: hidden;
             font-family: 'Microsoft YaHei', sans-serif;
         }
-
         #canvas3d {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             z-index: 1;
         }
-
         .message {
             position: fixed;
             bottom: 60px;
@@ -39,18 +30,10 @@
             animation: fadeInUp 2s ease-out 2s both;
             letter-spacing: 3px;
         }
-
         @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-
         .title {
             position: fixed;
             top: 40px;
@@ -63,16 +46,13 @@
             animation: fadeIn 2s ease-out 1s both;
             letter-spacing: 8px;
         }
-
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
         }
-
         .petal {
             position: fixed;
-            width: 25px;
-            height: 25px;
+            width: 25px; height: 25px;
             background: radial-gradient(ellipse at 30% 30%, #ff3333 0%, #cc0000 40%, #880000 100%);
             border-radius: 50% 0 50% 50%;
             opacity: 0.85;
@@ -81,198 +61,275 @@
             pointer-events: none;
             box-shadow: 0 0 15px rgba(255, 0, 0, 0.6);
         }
-
         @keyframes petalFall {
-            0% {
-                transform: translateY(-100px) rotate(0deg) translateX(0) scale(0.8);
-                opacity: 0;
-            }
-            10% {
-                opacity: 0.9;
-                transform: translateY(0) rotate(60deg) translateX(30px) scale(1);
-            }
-            50% {
-                transform: translateY(50vh) rotate(400deg) translateX(-40px) scale(1.1);
-            }
-            90% {
-                opacity: 0.85;
-                transform: translateY(100vh) rotate(700deg) translateX(50px) scale(0.9);
-            }
-            100% {
-                transform: translateY(110vh) rotate(720deg) translateX(60px) scale(0.7);
-                opacity: 0;
-            }
+            0% { transform: translateY(-100px) rotate(0deg) translateX(0) scale(0.8); opacity: 0; }
+            10% { opacity: 0.9; transform: translateY(0) rotate(60deg) translateX(30px) scale(1); }
+            50% { transform: translateY(50vh) rotate(400deg) translateX(-40px) scale(1.1); }
+            90% { opacity: 0.85; transform: translateY(100vh) rotate(700deg) translateX(50px) scale(0.9); }
+            100% { transform: translateY(110vh) rotate(720deg) translateX(60px) scale(0.7); opacity: 0; }
         }
     </style>
 </head>
 <body>
     <div class="title">送给特别的你</div>
-
     <canvas id="canvas3d"></canvas>
-
     <div class="message">你是我心中最美的玫瑰 🌹</div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        // 场景设置
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas3d'), antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
 
-        camera.position.z = 8;
-        camera.position.y = 2;
+        camera.position.set(0, 3, 10);
+        camera.lookAt(0, 1, 0);
 
-        // 灯光
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        // 环境光
+        const ambientLight = new THREE.AmbientLight(0xffcccc, 0.4);
         scene.add(ambientLight);
 
-        const pointLight1 = new THREE.PointLight(0xff6666, 1, 100);
-        pointLight1.position.set(5, 5, 5);
-        scene.add(pointLight1);
+        // 主光源
+        const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        mainLight.position.set(5, 8, 5);
+        mainLight.castShadow = true;
+        scene.add(mainLight);
 
-        const pointLight2 = new THREE.PointLight(0xff3333, 0.8, 100);
-        pointLight2.position.set(-5, 3, -5);
-        scene.add(pointLight2);
+        // 补光
+        const fillLight = new THREE.DirectionalLight(0xff8888, 0.5);
+        fillLight.position.set(-5, 3, -3);
+        scene.add(fillLight);
 
-        const pointLight3 = new THREE.PointLight(0xffaaaa, 0.6, 100);
-        pointLight3.position.set(0, -5, 5);
-        scene.add(pointLight3);
+        // 背光
+        const backLight = new THREE.DirectionalLight(0xff4444, 0.3);
+        backLight.position.set(0, -2, -5);
+        scene.add(backLight);
 
-        // 玫瑰花组
+        // 点光源 - 模拟烛光
+        const pointLight = new THREE.PointLight(0xff6644, 0.8, 20);
+        pointLight.position.set(3, 4, 3);
+        scene.add(pointLight);
+
         const roseGroup = new THREE.Group();
 
-        // 创建花瓣材质
-        const petalMaterial = new THREE.MeshPhongMaterial({
-            color: 0xff0000,
-            specular: 0x444444,
-            shininess: 30,
-            side: THREE.DoubleSide,
-            transparent: true,
-            opacity: 0.95
-        });
+        // 创建逼真的花瓣 - 使用参数化曲面
+        function createRealisticPetal(width, height, curl, twist) {
+            const segments = 20;
+            const geometry = new THREE.BufferGeometry();
+            const vertices = [];
+            const normals = [];
+            const uvs = [];
+            const indices = [];
 
-        // 创建单片花瓣几何体
-        function createPetalGeometry(size, curl) {
-            const shape = new THREE.Shape();
-            const s = size;
+            for (let i = 0; i <= segments; i++) {
+                for (let j = 0; j <= segments; j++) {
+                    const u = i / segments;
+                    const v = j / segments;
 
-            // 水滴形状
-            shape.moveTo(0, 0);
-            shape.bezierCurveTo(s * 0.4, s * 0.1, s * 0.6, s * 0.4, s * 0.3, s * 0.9);
-            shape.bezierCurveTo(s * 0.1, s * 1.0, -s * 0.1, s * 1.0, -s * 0.3, s * 0.9);
-            shape.bezierCurveTo(-s * 0.6, s * 0.4, -s * 0.4, s * 0.1, 0, 0);
+                    // 花瓣轮廓 - 水滴形
+                    const profileX = Math.sin(v * Math.PI) * width * (1 - Math.pow(v - 0.5, 2) * 0.5);
+                    const profileY = v * height;
 
-            const geometry = new THREE.ShapeGeometry(shape, 32);
+                    // 弯曲 - 花瓣向外卷曲
+                    const curlAmount = curl * Math.pow(v, 2);
+                    const profileZ = -curlAmount * height * 0.5;
 
-            // 添加弯曲效果
-            const positions = geometry.attributes.position;
-            for (let i = 0; i < positions.count; i++) {
-                const y = positions.getY(i);
-                const bendAmount = (y / s) * curl;
-                positions.setZ(i, bendAmount * bendAmount * 0.3);
+                    // 扭转
+                    const twistAngle = twist * v;
+                    const x = profileX * Math.cos(twistAngle);
+                    const z = profileZ + profileX * Math.sin(twistAngle) * 0.3;
+
+                    // 中间凹陷
+                    const centerDip = Math.pow(Math.sin(v * Math.PI), 2) * (1 - Math.abs(u - 0.5) * 2) * height * 0.1;
+
+                    vertices.push(
+                        (u - 0.5) * profileX * 2,
+                        profileY - centerDip,
+                        z
+                    );
+
+                    uvs.push(u, v);
+                }
             }
 
+            // 生成索引
+            for (let i = 0; i < segments; i++) {
+                for (let j = 0; j < segments; j++) {
+                    const a = i * (segments + 1) + j;
+                    const b = a + 1;
+                    const c = (i + 1) * (segments + 1) + j;
+                    const d = c + 1;
+                    indices.push(a, b, c);
+                    indices.push(b, d, c);
+                }
+            }
+
+            geometry.setIndex(indices);
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
             geometry.computeVertexNormals();
+
             return geometry;
+        }
+
+        // 花瓣材质 - PBR材质
+        function createPetalMaterial(layer) {
+            const hue = 0;
+            const saturation = 0.9;
+            const lightness = 0.35 + layer * 0.04;
+            const color = new THREE.Color().setHSL(hue, saturation, lightness);
+
+            return new THREE.MeshStandardMaterial({
+                color: color,
+                roughness: 0.6,
+                metalness: 0.05,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.95
+            });
         }
 
         // 创建玫瑰花
         function createRose() {
-            const layers = 7;
-            const petalsPerLayer = [3, 5, 7, 9, 11, 13, 15];
-            const layerRadius = [0.3, 0.6, 1.0, 1.5, 2.0, 2.6, 3.2];
-            const petalSizes = [0.5, 0.7, 0.9, 1.1, 1.3, 1.5, 1.7];
-            const layerHeights = [0.8, 0.6, 0.4, 0.2, 0, -0.2, -0.4];
+            const layers = 8;
+            const config = [
+                { petals: 3, radius: 0.2, size: 0.6, height: 1.2, curl: 0.2, twist: 0 },
+                { petals: 5, radius: 0.5, size: 0.8, height: 1.0, curl: 0.3, twist: 0.1 },
+                { petals: 7, radius: 0.9, size: 1.0, height: 0.8, curl: 0.5, twist: 0.15 },
+                { petals: 9, radius: 1.3, size: 1.2, height: 0.6, curl: 0.7, twist: 0.2 },
+                { petals: 11, radius: 1.8, size: 1.4, height: 0.4, curl: 0.9, twist: 0.25 },
+                { petals: 13, radius: 2.3, size: 1.6, height: 0.2, curl: 1.1, twist: 0.3 },
+                { petals: 15, radius: 2.8, size: 1.8, height: 0.0, curl: 1.3, twist: 0.35 },
+                { petals: 17, radius: 3.3, size: 2.0, height: -0.2, curl: 1.5, twist: 0.4 }
+            ];
 
             for (let layer = 0; layer < layers; layer++) {
-                const numPetals = petalsPerLayer[layer];
-                const radius = layerRadius[layer];
-                const size = petalSizes[layer];
-                const height = layerHeights[layer];
-                const curl = 0.3 + layer * 0.15;
+                const cfg = config[layer];
+                const material = createPetalMaterial(layer);
 
-                for (let i = 0; i < numPetals; i++) {
-                    const angle = (i / numPetals) * Math.PI * 2 + layer * 0.4;
+                for (let i = 0; i < cfg.petals; i++) {
+                    const angle = (i / cfg.petals) * Math.PI * 2 + layer * 0.5;
 
-                    const petalGeom = createPetalGeometry(size, curl);
-                    const petal = new THREE.Mesh(petalGeom, petalMaterial.clone());
+                    const petalGeom = createRealisticPetal(cfg.size * 0.4, cfg.size, cfg.curl, cfg.twist);
+                    const petal = new THREE.Mesh(petalGeom, material);
 
-                    // 调整颜色深浅
-                    const hue = 0;
-                    const saturation = 1;
-                    const lightness = 0.4 + layer * 0.03;
-                    petal.material.color.setHSL(hue, saturation, lightness);
-
-                    petal.position.x = Math.cos(angle) * radius;
-                    petal.position.z = Math.sin(angle) * radius;
-                    petal.position.y = height;
+                    petal.position.x = Math.cos(angle) * cfg.radius;
+                    petal.position.z = Math.sin(angle) * cfg.radius;
+                    petal.position.y = cfg.height;
 
                     petal.rotation.y = -angle + Math.PI / 2;
-                    petal.rotation.x = -0.3 - layer * 0.1;
+                    petal.rotation.x = -0.4 - layer * 0.08;
+                    petal.rotation.z = (Math.random() - 0.5) * 0.1;
+
+                    petal.castShadow = true;
+                    petal.receiveShadow = true;
 
                     roseGroup.add(petal);
                 }
             }
 
-            // 花心
-            const centerGeom = new THREE.SphereGeometry(0.4, 32, 32);
-            const centerMat = new THREE.MeshPhongMaterial({
-                color: 0xcc0000,
-                specular: 0x222222,
-                shininess: 20
+            // 花心 - 更精细
+            const centerGeom = new THREE.SphereGeometry(0.35, 32, 32);
+            const centerMat = new THREE.MeshStandardMaterial({
+                color: 0x880000,
+                roughness: 0.8,
+                metalness: 0.1
             });
             const center = new THREE.Mesh(centerGeom, centerMat);
-            center.position.y = 0.9;
-            center.scale.y = 0.6;
+            center.position.y = 1.3;
+            center.scale.set(1, 0.7, 1);
             roseGroup.add(center);
+
+            // 花蕊
+            for (let i = 0; i < 12; i++) {
+                const angle = (i / 12) * Math.PI * 2;
+                const r = 0.2;
+                const stamenGeom = new THREE.CylinderGeometry(0.02, 0.01, 0.3, 8);
+                const stamenMat = new THREE.MeshStandardMaterial({ color: 0xffcc00, roughness: 0.5 });
+                const stamen = new THREE.Mesh(stamenGeom, stamenMat);
+                stamen.position.set(Math.cos(angle) * r, 1.4, Math.sin(angle) * r);
+                stamen.rotation.x = (Math.random() - 0.5) * 0.3;
+                stamen.rotation.z = (Math.random() - 0.5) * 0.3;
+                roseGroup.add(stamen);
+            }
         }
 
         // 创建花茎
         function createStem() {
             const stemCurve = new THREE.CatmullRomCurve3([
                 new THREE.Vector3(0, -0.5, 0),
-                new THREE.Vector3(0.1, -2, 0.1),
-                new THREE.Vector3(-0.1, -3.5, -0.1),
-                new THREE.Vector3(0, -5, 0)
+                new THREE.Vector3(0.08, -2, 0.05),
+                new THREE.Vector3(-0.05, -3.5, -0.08),
+                new THREE.Vector3(0.03, -5, 0.02),
+                new THREE.Vector3(0, -6.5, 0)
             ]);
 
-            const stemGeom = new THREE.TubeGeometry(stemCurve, 32, 0.12, 8, false);
-            const stemMat = new THREE.MeshPhongMaterial({
+            const stemGeom = new THREE.TubeGeometry(stemCurve, 64, 0.1, 12, false);
+            const stemMat = new THREE.MeshStandardMaterial({
                 color: 0x2d5a2d,
-                specular: 0x111111,
-                shininess: 10
+                roughness: 0.8,
+                metalness: 0.05
             });
             const stem = new THREE.Mesh(stemGeom, stemMat);
+            stem.castShadow = true;
             roseGroup.add(stem);
 
+            // 刺
+            for (let i = 0; i < 5; i++) {
+                const t = 0.2 + i * 0.15;
+                const pos = stemCurve.getPoint(t);
+                const thornGeom = new THREE.ConeGeometry(0.03, 0.15, 8);
+                const thornMat = new THREE.MeshStandardMaterial({ color: 0x3d6a3d, roughness: 0.7 });
+                const thorn = new THREE.Mesh(thornGeom, thornMat);
+                thorn.position.copy(pos);
+                thorn.position.x += (Math.random() - 0.5) * 0.15;
+                thorn.rotation.z = (Math.random() - 0.5) * 1.5;
+                roseGroup.add(thorn);
+            }
+
             // 叶子
-            createLeaf(-0.8, -2.5, 0.3, 0.8);
-            createLeaf(0.9, -3.5, -0.4, 0.7);
+            createLeaf(-0.6, -2.5, 0.2, 1.0);
+            createLeaf(0.7, -3.8, -0.3, 0.9);
+            createLeaf(-0.5, -5.0, 0.1, 0.7);
         }
 
         function createLeaf(x, y, z, size) {
             const leafShape = new THREE.Shape();
             leafShape.moveTo(0, 0);
-            leafShape.bezierCurveTo(size * 0.3, size * 0.2, size * 0.7, size * 0.2, size, 0);
-            leafShape.bezierCurveTo(size * 0.7, -size * 0.2, size * 0.3, -size * 0.2, 0, 0);
+            leafShape.bezierCurveTo(size * 0.2, size * 0.15, size * 0.5, size * 0.2, size * 0.8, size * 0.05);
+            leafShape.bezierCurveTo(size * 0.9, 0, size * 0.9, 0, size, 0);
+            leafShape.bezierCurveTo(size * 0.9, 0, size * 0.9, 0, size * 0.8, -size * 0.05);
+            leafShape.bezierCurveTo(size * 0.5, -size * 0.2, size * 0.2, -size * 0.15, 0, 0);
 
             const leafGeom = new THREE.ShapeGeometry(leafShape, 16);
-            const leafMat = new THREE.MeshPhongMaterial({
+            const leafMat = new THREE.MeshStandardMaterial({
                 color: 0x2d6a2d,
-                specular: 0x111111,
-                shininess: 10,
+                roughness: 0.7,
+                metalness: 0.05,
                 side: THREE.DoubleSide
             });
             const leaf = new THREE.Mesh(leafGeom, leafMat);
             leaf.position.set(x, y, z);
-            leaf.rotation.z = x > 0 ? -0.5 : 0.5;
-            leaf.rotation.y = x > 0 ? 0.3 : -0.3;
+            leaf.rotation.z = x > 0 ? -0.6 : 0.6;
+            leaf.rotation.y = x > 0 ? 0.4 : -0.4;
+            leaf.rotation.x = 0.2;
+            leaf.castShadow = true;
             roseGroup.add(leaf);
+
+            // 叶脉
+            const veinGeom = new THREE.CylinderGeometry(0.01, 0.005, size * 0.8, 4);
+            const veinMat = new THREE.MeshStandardMaterial({ color: 0x1a4a1a });
+            const vein = new THREE.Mesh(veinGeom, veinMat);
+            vein.position.set(x + (x > 0 ? size * 0.3 : -size * 0.3), y, z);
+            vein.rotation.z = x > 0 ? -0.6 : 0.6;
+            roseGroup.add(vein);
         }
 
-        // 构建玫瑰花
         createRose();
         createStem();
 
@@ -280,26 +337,25 @@
         scene.add(roseGroup);
 
         // 动画
-        let rotationSpeed = 0.005;
         function animate() {
             requestAnimationFrame(animate);
 
-            roseGroup.rotation.y += rotationSpeed;
+            roseGroup.rotation.y += 0.003;
+            roseGroup.position.y = 1 + Math.sin(Date.now() * 0.0008) * 0.15;
 
-            // 轻微上下浮动
-            roseGroup.position.y = 1 + Math.sin(Date.now() * 0.001) * 0.1;
+            // 光源动画
+            pointLight.position.x = Math.sin(Date.now() * 0.001) * 4;
+            pointLight.position.z = Math.cos(Date.now() * 0.001) * 4;
 
             renderer.render(scene, camera);
         }
 
-        // 窗口大小调整
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // 创建飘落花瓣
         function createPetals() {
             setInterval(() => {
                 const petal = document.createElement('div');
@@ -310,12 +366,10 @@
                 petal.style.width = size + 'px';
                 petal.style.height = size + 'px';
                 document.body.appendChild(petal);
-
                 setTimeout(() => petal.remove(), 12000);
-            }, 400);
+            }, 500);
         }
 
-        // 启动
         animate();
         createPetals();
     </script>
