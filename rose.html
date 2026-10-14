@@ -89,25 +89,35 @@
         /* 飘落花瓣 */
         .petal {
             position: fixed;
-            width: 15px;
-            height: 15px;
-            background: radial-gradient(ellipse at center, #ff4444 0%, #cc0000 100%);
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(ellipse at center, #ff2222 0%, #cc0000 50%, #880000 100%);
             border-radius: 50% 0 50% 50%;
-            opacity: 0.6;
+            opacity: 0.8;
             animation: petalFall linear infinite;
             z-index: 5;
             pointer-events: none;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
         }
 
         @keyframes petalFall {
             0% {
-                transform: translateY(-100px) rotate(0deg) translateX(0);
+                transform: translateY(-100px) rotate(0deg) translateX(0) scale(0.8);
                 opacity: 0;
             }
-            10% { opacity: 0.6; }
-            90% { opacity: 0.6; }
+            10% {
+                opacity: 0.9;
+                transform: translateY(0) rotate(45deg) translateX(20px) scale(1);
+            }
+            50% {
+                transform: translateY(50vh) rotate(360deg) translateX(-30px) scale(1);
+            }
+            90% {
+                opacity: 0.8;
+                transform: translateY(100vh) rotate(680deg) translateX(40px) scale(0.9);
+            }
             100% {
-                transform: translateY(110vh) rotate(720deg) translateX(80px);
+                transform: translateY(110vh) rotate(720deg) translateX(50px) scale(0.7);
                 opacity: 0;
             }
         }
@@ -206,10 +216,10 @@
 
         // 绘制花瓣
         function drawPetal3D(x, y, size, layer, t) {
-            const alpha = 0.4 + t * 0.6;
+            const alpha = 0.5 + t * 0.5;
             const hue = 0;
-            const saturation = 80 - layer * 2;
-            const lightness = 30 + layer * 2 + t * 10;
+            const saturation = 100;
+            const lightness = 40 + layer * 1.5 + t * 15;
 
             ctx.save();
             ctx.globalAlpha = alpha;
@@ -219,16 +229,16 @@
             ctx.ellipse(x, y, size * 1.5, size, 0, 0, Math.PI * 2);
 
             const gradient = ctx.createRadialGradient(x, y, 0, x, y, size * 1.5);
-            gradient.addColorStop(0, `hsla(${hue}, ${saturation}%, ${lightness + 20}%, ${alpha})`);
+            gradient.addColorStop(0, `hsla(${hue}, ${saturation}%, ${lightness + 25}%, ${alpha})`);
             gradient.addColorStop(0.5, `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`);
-            gradient.addColorStop(1, `hsla(${hue}, ${saturation - 20}%, ${lightness - 10}%, ${alpha * 0.5})`);
+            gradient.addColorStop(1, `hsla(${hue}, ${saturation - 10}%, ${lightness - 15}%, ${alpha * 0.6})`);
 
             ctx.fillStyle = gradient;
             ctx.fill();
 
             // 边缘高光
-            ctx.strokeStyle = `hsla(${hue}, ${saturation}%, ${lightness + 30}%, ${alpha * 0.5})`;
-            ctx.lineWidth = 0.5;
+            ctx.strokeStyle = `hsla(${hue}, ${saturation}%, ${lightness + 35}%, ${alpha * 0.7})`;
+            ctx.lineWidth = 0.8;
             ctx.stroke();
 
             ctx.restore();
@@ -320,9 +330,9 @@
             // 花心
             ctx.save();
             const heartGradient = ctx.createRadialGradient(centerX, centerY - 30, 0, centerX, centerY - 30, 25);
-            heartGradient.addColorStop(0, '#8b0000');
-            heartGradient.addColorStop(0.5, '#a52a2a');
-            heartGradient.addColorStop(1, '#cd5c5c');
+            heartGradient.addColorStop(0, '#ff0000');
+            heartGradient.addColorStop(0.5, '#cc0000');
+            heartGradient.addColorStop(1, '#880000');
 
             ctx.beginPath();
             ctx.arc(centerX, centerY - 30, 20, 0, Math.PI * 2);
@@ -340,14 +350,14 @@
                 const petal = document.createElement('div');
                 petal.className = 'petal';
                 petal.style.left = Math.random() * 100 + '%';
-                petal.style.animationDuration = (Math.random() * 5 + 8) + 's';
-                const size = Math.random() * 10 + 10;
+                petal.style.animationDuration = (Math.random() * 4 + 6) + 's';
+                const size = Math.random() * 15 + 15;
                 petal.style.width = size + 'px';
                 petal.style.height = size + 'px';
                 document.body.appendChild(petal);
 
-                setTimeout(() => petal.remove(), 15000);
-            }, 600);
+                setTimeout(() => petal.remove(), 12000);
+            }, 400);
         }
 
         // 启动
