@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>玫瑰花 - 送给特别的你</title>
+    <title>3D玫瑰花 - 送给特别的你</title>
     <style>
         * {
             margin: 0;
@@ -14,24 +14,23 @@
         body {
             background: radial-gradient(ellipse at center, #1a0505 0%, #0a0000 100%);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
             overflow: hidden;
             font-family: 'Microsoft YaHei', sans-serif;
         }
 
-        canvas {
+        #canvas3d {
             position: fixed;
             top: 0;
             left: 0;
+            width: 100%;
+            height: 100%;
             z-index: 1;
         }
 
         .message {
             position: fixed;
             bottom: 60px;
+            width: 100%;
             text-align: center;
             z-index: 10;
             color: rgba(255, 180, 180, 0.9);
@@ -55,6 +54,7 @@
         .title {
             position: fixed;
             top: 40px;
+            width: 100%;
             text-align: center;
             z-index: 10;
             color: rgba(255, 150, 150, 0.7);
@@ -67,22 +67,6 @@
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
-        }
-
-        .glow {
-            position: fixed;
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, rgba(255, 50, 50, 0.15) 0%, transparent 70%);
-            border-radius: 50%;
-            animation: glowPulse 4s ease-in-out infinite;
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        @keyframes glowPulse {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.3); opacity: 0.8; }
         }
 
         .petal {
@@ -122,206 +106,198 @@
     </style>
 </head>
 <body>
-    <div class="glow" style="top: 25%; left: 30%;"></div>
-
     <div class="title">送给特别的你</div>
 
-    <canvas id="roseCanvas"></canvas>
+    <canvas id="canvas3d"></canvas>
 
     <div class="message">你是我心中最美的玫瑰 🌹</div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        const canvas = document.getElementById('roseCanvas');
-        const ctx = canvas.getContext('2d');
+        // 场景设置
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas3d'), antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
+        camera.position.z = 8;
+        camera.position.y = 2;
 
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2 - 50;
-        let time = 0;
+        // 灯光
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
 
-        // 绘制单片花瓣 - 水滴形状
-        function drawPetal(cx, cy, size, angle, layer, curl) {
-            ctx.save();
-            ctx.translate(cx, cy);
-            ctx.rotate(angle);
+        const pointLight1 = new THREE.PointLight(0xff6666, 1, 100);
+        pointLight1.position.set(5, 5, 5);
+        scene.add(pointLight1);
 
-            // 花瓣路径 - 水滴形
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
+        const pointLight2 = new THREE.PointLight(0xff3333, 0.8, 100);
+        pointLight2.position.set(-5, 3, -5);
+        scene.add(pointLight2);
 
-            // 右侧曲线
-            ctx.bezierCurveTo(
-                size * 0.4, -size * 0.2,
-                size * 0.6, -size * 0.5,
-                size * 0.3, -size * 0.9
-            );
+        const pointLight3 = new THREE.PointLight(0xffaaaa, 0.6, 100);
+        pointLight3.position.set(0, -5, 5);
+        scene.add(pointLight3);
 
-            // 顶部
-            ctx.bezierCurveTo(
-                size * 0.1, -size * 1.0,
-                -size * 0.1, -size * 1.0,
-                -size * 0.3, -size * 0.9
-            );
+        // 玫瑰花组
+        const roseGroup = new THREE.Group();
 
-            // 左侧曲线
-            ctx.bezierCurveTo(
-                -size * 0.6, -size * 0.5,
-                -size * 0.4, -size * 0.2,
-                0, 0
-            );
+        // 创建花瓣材质
+        const petalMaterial = new THREE.MeshPhongMaterial({
+            color: 0xff0000,
+            specular: 0x444444,
+            shininess: 30,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.95
+        });
 
-            // 渐变 - 红色系
-            const gradient = ctx.createRadialGradient(0, -size * 0.4, 0, 0, -size * 0.4, size);
-            const lightness = 45 + layer * 3;
-            gradient.addColorStop(0, `hsl(0, 100%, ${lightness + 15}%)`);
-            gradient.addColorStop(0.4, `hsl(0, 95%, ${lightness}%)`);
-            gradient.addColorStop(0.8, `hsl(355, 90%, ${lightness - 10}%)`);
-            gradient.addColorStop(1, `hsl(350, 85%, ${lightness - 20}%)`);
+        // 创建单片花瓣几何体
+        function createPetalGeometry(size, curl) {
+            const shape = new THREE.Shape();
+            const s = size;
 
-            ctx.fillStyle = gradient;
-            ctx.fill();
+            // 水滴形状
+            shape.moveTo(0, 0);
+            shape.bezierCurveTo(s * 0.4, s * 0.1, s * 0.6, s * 0.4, s * 0.3, s * 0.9);
+            shape.bezierCurveTo(s * 0.1, s * 1.0, -s * 0.1, s * 1.0, -s * 0.3, s * 0.9);
+            shape.bezierCurveTo(-s * 0.6, s * 0.4, -s * 0.4, s * 0.1, 0, 0);
 
-            // 边缘高光
-            ctx.strokeStyle = `hsla(0, 100%, ${lightness + 25}%, 0.4)`;
-            ctx.lineWidth = 1;
-            ctx.stroke();
+            const geometry = new THREE.ShapeGeometry(shape, 32);
 
-            // 花瓣纹理
-            ctx.beginPath();
-            ctx.moveTo(0, -size * 0.1);
-            ctx.quadraticCurveTo(size * 0.05, -size * 0.5, 0, -size * 0.85);
-            ctx.strokeStyle = `hsla(0, 80%, ${lightness - 15}%, 0.3)`;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
+            // 添加弯曲效果
+            const positions = geometry.attributes.position;
+            for (let i = 0; i < positions.count; i++) {
+                const y = positions.getY(i);
+                const bendAmount = (y / s) * curl;
+                positions.setZ(i, bendAmount * bendAmount * 0.3);
+            }
 
-            ctx.restore();
+            geometry.computeVertexNormals();
+            return geometry;
         }
 
-        // 绘制花茎
-        function drawStem() {
-            ctx.save();
+        // 创建玫瑰花
+        function createRose() {
+            const layers = 7;
+            const petalsPerLayer = [3, 5, 7, 9, 11, 13, 15];
+            const layerRadius = [0.3, 0.6, 1.0, 1.5, 2.0, 2.6, 3.2];
+            const petalSizes = [0.5, 0.7, 0.9, 1.1, 1.3, 1.5, 1.7];
+            const layerHeights = [0.8, 0.6, 0.4, 0.2, 0, -0.2, -0.4];
 
-            // 主茎
-            ctx.strokeStyle = '#2d5a2d';
-            ctx.lineWidth = 8;
-            ctx.lineCap = 'round';
-
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY + 120);
-            ctx.bezierCurveTo(
-                centerX - 3, centerY + 200,
-                centerX + 3, centerY + 300,
-                centerX, centerY + 400
-            );
-            ctx.stroke();
-
-            // 叶子
-            drawLeaf(centerX - 50, centerY + 220, -0.5, 60);
-            drawLeaf(centerX + 55, centerY + 300, 0.5, 55);
-
-            ctx.restore();
-        }
-
-        function drawLeaf(x, y, angle, size) {
-            ctx.save();
-            ctx.translate(x, y);
-            ctx.rotate(angle);
-
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.bezierCurveTo(
-                size * 0.3, -size * 0.4,
-                size * 0.7, -size * 0.3,
-                size, 0
-            );
-            ctx.bezierCurveTo(
-                size * 0.7, size * 0.3,
-                size * 0.3, size * 0.4,
-                0, 0
-            );
-
-            const gradient = ctx.createLinearGradient(0, 0, size, 0);
-            gradient.addColorStop(0, '#1a4a1a');
-            gradient.addColorStop(0.5, '#2d6a2d');
-            gradient.addColorStop(1, '#1a4a1a');
-
-            ctx.fillStyle = gradient;
-            ctx.fill();
-
-            // 叶脉
-            ctx.strokeStyle = 'rgba(100, 180, 100, 0.5)';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(size * 0.8, 0);
-            ctx.stroke();
-
-            ctx.restore();
-        }
-
-        // 绘制完整玫瑰花
-        function drawRose() {
-            const layers = 6;
-            const petalsPerLayer = [3, 5, 7, 9, 11, 13];
-            const layerRadius = [15, 30, 50, 75, 100, 130];
-            const petalSizes = [25, 35, 45, 55, 65, 75];
-
-            // 从外层到内层绘制
-            for (let layer = layers - 1; layer >= 0; layer--) {
+            for (let layer = 0; layer < layers; layer++) {
                 const numPetals = petalsPerLayer[layer];
                 const radius = layerRadius[layer];
-                const petalSize = petalSizes[layer];
+                const size = petalSizes[layer];
+                const height = layerHeights[layer];
+                const curl = 0.3 + layer * 0.15;
 
                 for (let i = 0; i < numPetals; i++) {
-                    const angle = (i / numPetals) * Math.PI * 2 + layer * 0.3;
-                    const x = centerX + Math.cos(angle) * radius;
-                    const y = centerY + Math.sin(angle) * radius * 0.5;
+                    const angle = (i / numPetals) * Math.PI * 2 + layer * 0.4;
 
-                    // 外层花瓣向下弯曲，内层向上
-                    const curl = (layer / layers) * 0.5;
-                    const petalAngle = angle + Math.PI / 2 + curl;
+                    const petalGeom = createPetalGeometry(size, curl);
+                    const petal = new THREE.Mesh(petalGeom, petalMaterial.clone());
 
-                    drawPetal(x, y, petalSize, petalAngle, layer, curl);
+                    // 调整颜色深浅
+                    const hue = 0;
+                    const saturation = 1;
+                    const lightness = 0.4 + layer * 0.03;
+                    petal.material.color.setHSL(hue, saturation, lightness);
+
+                    petal.position.x = Math.cos(angle) * radius;
+                    petal.position.z = Math.sin(angle) * radius;
+                    petal.position.y = height;
+
+                    petal.rotation.y = -angle + Math.PI / 2;
+                    petal.rotation.x = -0.3 - layer * 0.1;
+
+                    roseGroup.add(petal);
                 }
             }
 
             // 花心
-            ctx.save();
-            const heartGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 20);
-            heartGradient.addColorStop(0, '#ff1111');
-            heartGradient.addColorStop(0.5, '#cc0000');
-            heartGradient.addColorStop(1, '#880000');
-
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, 18, 0, Math.PI * 2);
-            ctx.fillStyle = heartGradient;
-            ctx.fill();
-
-            // 花心高光
-            ctx.beginPath();
-            ctx.arc(centerX - 5, centerY - 5, 6, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(255, 200, 200, 0.4)';
-            ctx.fill();
-
-            ctx.restore();
+            const centerGeom = new THREE.SphereGeometry(0.4, 32, 32);
+            const centerMat = new THREE.MeshPhongMaterial({
+                color: 0xcc0000,
+                specular: 0x222222,
+                shininess: 20
+            });
+            const center = new THREE.Mesh(centerGeom, centerMat);
+            center.position.y = 0.9;
+            center.scale.y = 0.6;
+            roseGroup.add(center);
         }
 
-        // 主动画循环
+        // 创建花茎
+        function createStem() {
+            const stemCurve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(0, -0.5, 0),
+                new THREE.Vector3(0.1, -2, 0.1),
+                new THREE.Vector3(-0.1, -3.5, -0.1),
+                new THREE.Vector3(0, -5, 0)
+            ]);
+
+            const stemGeom = new THREE.TubeGeometry(stemCurve, 32, 0.12, 8, false);
+            const stemMat = new THREE.MeshPhongMaterial({
+                color: 0x2d5a2d,
+                specular: 0x111111,
+                shininess: 10
+            });
+            const stem = new THREE.Mesh(stemGeom, stemMat);
+            roseGroup.add(stem);
+
+            // 叶子
+            createLeaf(-0.8, -2.5, 0.3, 0.8);
+            createLeaf(0.9, -3.5, -0.4, 0.7);
+        }
+
+        function createLeaf(x, y, z, size) {
+            const leafShape = new THREE.Shape();
+            leafShape.moveTo(0, 0);
+            leafShape.bezierCurveTo(size * 0.3, size * 0.2, size * 0.7, size * 0.2, size, 0);
+            leafShape.bezierCurveTo(size * 0.7, -size * 0.2, size * 0.3, -size * 0.2, 0, 0);
+
+            const leafGeom = new THREE.ShapeGeometry(leafShape, 16);
+            const leafMat = new THREE.MeshPhongMaterial({
+                color: 0x2d6a2d,
+                specular: 0x111111,
+                shininess: 10,
+                side: THREE.DoubleSide
+            });
+            const leaf = new THREE.Mesh(leafGeom, leafMat);
+            leaf.position.set(x, y, z);
+            leaf.rotation.z = x > 0 ? -0.5 : 0.5;
+            leaf.rotation.y = x > 0 ? 0.3 : -0.3;
+            roseGroup.add(leaf);
+        }
+
+        // 构建玫瑰花
+        createRose();
+        createStem();
+
+        roseGroup.position.y = 1;
+        scene.add(roseGroup);
+
+        // 动画
+        let rotationSpeed = 0.005;
         function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            drawStem();
-            drawRose();
-
-            time++;
             requestAnimationFrame(animate);
+
+            roseGroup.rotation.y += rotationSpeed;
+
+            // 轻微上下浮动
+            roseGroup.position.y = 1 + Math.sin(Date.now() * 0.001) * 0.1;
+
+            renderer.render(scene, camera);
         }
+
+        // 窗口大小调整
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
 
         // 创建飘落花瓣
         function createPetals() {
@@ -336,7 +312,7 @@
                 document.body.appendChild(petal);
 
                 setTimeout(() => petal.remove(), 12000);
-            }, 350);
+            }, 400);
         }
 
         // 启动
