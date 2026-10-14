@@ -520,7 +520,8 @@
     <!-- 音乐控制 -->
     <button class="music-control" id="musicBtn" onclick="toggleMusic()">🎵</button>
     <audio id="bgMusic" loop>
-        <source src="https://www.bensound.com/bensound-music/bensound-ukulele.mp3" type="audio/mpeg">
+        <source src="https://music.163.com/song/media/outer/url?id=1901371647.mp3" type="audio/mpeg">
+        <source src="https://cdn.pixabay.com/audio/2022/10/18/audio_048e8a8e8e.mp3" type="audio/mpeg">
     </audio>
 
     <!-- 气球 -->
@@ -617,8 +618,11 @@
 
         // 音乐控制
         let isPlaying = false;
+        let hasInteracted = false;
         const bgMusic = document.getElementById('bgMusic');
         const musicBtn = document.getElementById('musicBtn');
+
+        bgMusic.volume = 0.5;
 
         function toggleMusic() {
             if (isPlaying) {
@@ -626,12 +630,26 @@
                 musicBtn.textContent = '🎵';
                 musicBtn.classList.remove('playing');
             } else {
-                bgMusic.play();
+                bgMusic.play().catch(() => {});
                 musicBtn.textContent = '🎶';
                 musicBtn.classList.add('playing');
             }
             isPlaying = !isPlaying;
+            hasInteracted = true;
         }
+
+        // 首次点击页面自动播放音乐
+        document.addEventListener('click', function autoPlay() {
+            if (!hasInteracted && !isPlaying) {
+                bgMusic.play().then(() => {
+                    musicBtn.textContent = '🎶';
+                    musicBtn.classList.add('playing');
+                    isPlaying = true;
+                    hasInteracted = true;
+                }).catch(() => {});
+            }
+            document.removeEventListener('click', autoPlay);
+        }, { once: true });
 
         // 惊喜弹窗
         const surprises = [
