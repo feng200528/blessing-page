@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>致朋友的感谢与鼓励</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* 飘浮的气球动画 */
+        .balloon {
+            position: absolute;
+            width: 60px;
+            height: 80px;
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+            opacity: 0.7;
+        }
+
+        .balloon::before {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(5deg); }
+        }
+
+        /* 星星闪烁 */
+        .star {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.5); }
+        }
+
+        /* 主要内容卡片 */
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            padding: 60px 50px;
+            max-width: 700px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            position: relative;
+            z-index: 10;
+            animation: slideIn 1s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .title {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 30px;
+            animation: bounce 2s ease-in-out infinite;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .message {
+            font-size: 22px;
+            color: #333;
+            line-height: 1.8;
+            margin: 30px 0;
+            animation: fadeIn 1.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .highlight {
+            color: #f093fb;
+            font-weight: bold;
+            font-size: 26px;
+            display: inline-block;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .emoji {
+            font-size: 60px;
+            margin: 20px 0;
+            animation: rotate 3s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        /* 彩带飘落效果 */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #f093fb;
+            animation: fall 4s linear infinite;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* 音乐控制按钮 */
+        .music-control {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 24px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        .music-control:hover {
+            transform: scale(1.1);
+        }
+
+        .music-control.playing {
+            animation: musicRotate 2s linear infinite;
+        }
+
+        @keyframes musicRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- 音乐控制按钮 -->
+    <button class="music-control" id="musicBtn" onclick="toggleMusic()">🎵</button>
+    
+    <!-- 背景音乐 -->
+    <audio id="bgMusic" loop>
+        <source src="https://www.bensound.com/bensound-music/bensound-ukulele.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- 装饰气球 -->
+    <div class="balloon" style="background: #ff6b9d; left: 10%; top: 20%; animation-delay: 0s;"></div>
+    <div class="balloon" style="background: #ffd93d; left: 80%; top: 30%; animation-delay: 1s;"></div>
+    <div class="balloon" style="background: #6bcf7f; left: 15%; top: 70%; animation-delay: 2s;"></div>
+    <div class="balloon" style="background: #4d9fff; left: 85%; top: 60%; animation-delay: 1.5s;"></div>
+
+    <!-- 主要内容 -->
+    <div class="container">
+        <div class="emoji">🌟</div>
+        <h1 class="title">致我亲爱的朋友</h1>
+        
+        <div class="message">
+            <p style="margin-bottom: 20px;">
+                感谢你一直以来的<span class="highlight">陪伴与支持</span>
+            </p>
+            <p style="margin-bottom: 20px;">
+                在我困难的时候,你总是第一个伸出援手
+            </p>
+            <p style="margin-bottom: 20px;">
+                在我迷茫的时候,你总是给我<span class="highlight">鼓励和方向</span>
+            </p>
+            <p style="margin-bottom: 30px;">
+                因为有你,我的生活充满了<span class="highlight">阳光和温暖</span>
+            </p>
+            
+            <p style="font-size: 28px; color: #667eea; margin-top: 40px; font-weight: bold;">
+                加油!未来一定会更好!✨
+            </p>
+            <p style="font-size: 20px; color: #764ba2; margin-top: 20px;">
+                我相信你,就像你一直相信我一样 💪
+            </p>
+        </div>
+
+        <button class="button" onclick="showSurprise()">点击有惊喜 🎁</button>
+    </div>
+
+    <script>
+        // 创建星星
+        function createStars() {
+            for (let i = 0; i < 30; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 2 + 's';
+                document.body.appendChild(star);
+            }
+        }
+
+        // 创建彩带
+        function createConfetti() {
+            const colors = ['#ff6b9d', '#ffd93d', '#6bcf7f', '#4d9fff', '#f093fb'];
+            
+            setInterval(() => {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                document.body.appendChild(confetti);
+
+                setTimeout(() => {
+                    confetti.remove();
+                }, 4000);
+            }, 200);
+        }
+
+        // 音乐控制
+        let isPlaying = false;
+        const bgMusic = document.getElementById('bgMusic');
+        const musicBtn = document.getElementById('musicBtn');
+
+        function toggleMusic() {
+            if (isPlaying) {
+                bgMusic.pause();
+                musicBtn.textContent = '🎵';
+                musicBtn.classList.remove('playing');
+            } else {
+                bgMusic.play();
+                musicBtn.textContent = '🎶';
+                musicBtn.classList.add('playing');
+            }
+            isPlaying = !isPlaying;
+        }
+
+        // 惊喜按钮
+        function showSurprise() {
+            const messages = [
+                '你是最棒的!🌈',
+                '永远支持你!💖',
+                '明天会更好!🌞',
+                '感谢有你!🙏',
+                '一起加油!🚀'
+            ];
+            
+            const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+            alert(randomMsg);
+            
+            // 创建更多彩带
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    const colors = ['#ff6b9d', '#ffd93d', '#6bcf7f', '#4d9fff', '#f093fb'];
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    document.body.appendChild(confetti);
+
+                    setTimeout(() => {
+                        confetti.remove();
+                    }, 4000);
+                }, i * 50);
+            }
+        }
+
+        // 页面加载完成后启动动画
+        window.onload = function() {
+            createStars();
+            createConfetti();
+        };
+    </script>
+</body>
+</html>
